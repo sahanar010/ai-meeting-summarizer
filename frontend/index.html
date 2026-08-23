@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meeting Summarizer — turn talk into action</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f6f7fd;
+        --card: #ffffff;
+        --ink: #2b2a4c;
+        --ink-dim: #75749a;
+        --sky: #4fa8e8;
+        --sky-soft: #e4f1fd;
+        --violet: #8b7fe8;
+        --violet-deep: #6c5ce7;
+        --violet-soft: #efecfd;
+        --mint: #43c6ac;
+        --mint-soft: #e1f7f1;
+        --coral: #ff6b6b;
+        --coral-soft: #ffebeb;
+        --amber: #f5a623;
+        --line: #e7e6f5;
+        --shadow: 0 8px 30px rgba(108, 92, 231, 0.08);
+        --shadow-lift: 0 14px 40px rgba(108, 92, 231, 0.16);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      /* ambient floating gradient blobs */
+      .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(70px);
+        opacity: 0.35;
+        z-index: 0;
+        pointer-events: none;
+      }
+      .blob1 {
+        width: 420px;
+        height: 420px;
+        background: radial-gradient(circle, var(--sky), transparent 70%);
+        top: -120px;
+        left: -100px;
+        animation: float1 16s ease-in-out infinite;
+      }
+      .blob2 {
+        width: 380px;
+        height: 380px;
+        background: radial-gradient(circle, var(--violet), transparent 70%);
+        top: 200px;
+        right: -140px;
+        animation: float2 18s ease-in-out infinite;
+      }
+      .blob3 {
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, var(--mint), transparent 70%);
+        bottom: -100px;
+        left: 20%;
+        animation: float1 20s ease-in-out infinite reverse;
+      }
+      @keyframes float1 {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        50% {
+          transform: translate(40px, 30px);
+        }
+      }
+      @keyframes float2 {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        50% {
+          transform: translate(-30px, 40px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .blob {
+          animation: none;
+        }
+      }
+
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 56px 24px 40px;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* ---------- Hero / header ---------- */
+      .hero {
+        text-align: center;
+        margin-bottom: 44px;
+      }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        color: var(--violet-deep);
+        background: var(--violet-soft);
+        padding: 6px 14px;
+        border-radius: 99px;
+        margin-bottom: 18px;
+        text-transform: uppercase;
+      }
+      .eyebrow .pulse {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--mint);
+        box-shadow: 0 0 0 0 rgba(67, 198, 172, 0.6);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(67, 198, 172, 0.5);
+        }
+        70% {
+          box-shadow: 0 0 0 8px rgba(67, 198, 172, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(67, 198, 172, 0);
+        }
+      }
+
+      h1 {
+        font-family: "Sora", sans-serif;
+        font-weight: 800;
+        font-size: 2.6rem;
+        line-height: 1.15;
+        margin: 0 0 14px;
+        letter-spacing: -0.02em;
+        background: linear-gradient(
+          100deg,
+          var(--violet-deep) 0%,
+          var(--sky) 55%,
+          var(--mint) 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .subhead {
+        font-size: 1.05rem;
+        color: var(--ink-dim);
+        max-width: 520px;
+        margin: 0 auto;
+        line-height: 1.6;
+      }
+
+      /* ---------- Card / upload deck ---------- */
+      .card {
+        background: var(--card);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        padding: 32px;
+        margin-bottom: 22px;
+        border: 1px solid var(--line);
+      }
+      .card-label {
+        font-family: "Sora", sans-serif;
+        font-weight: 700;
+        font-size: 0.72rem;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card-label .swatch {
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+      }
+
+      #dropzone {
+        border: 2px dashed var(--line);
+        border-radius: 18px;
+        padding: 44px 20px;
+        text-align: center;
+        cursor: pointer;
+        background: linear-gradient(
+          180deg,
+          var(--sky-soft) 0%,
+          transparent 100%
+        );
+        transition: border-color 0.2s ease, transform 0.15s ease;
+      }
+      #dropzone:hover,
+      #dropzone.drag {
+        border-color: var(--violet);
+        transform: translateY(-2px);
+      }
+      #dropzone .icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 14px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--sky), var(--violet));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: var(--shadow);
+      }
+      #dropzone p {
+        margin: 4px 0;
+        color: var(--ink-dim);
+        font-size: 0.92rem;
+      }
+      #dropzone .filename {
+        color: var(--violet-deep);
+        font-weight: 600;
+        font-family: "Inter", sans-serif;
+        font-size: 0.95rem;
+      }
+      #fileInput {
+        display: none;
+      }
+
+      .action-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 22px;
+        flex-wrap: wrap;
+      }
+      #recBtn {
+        font-family: "Sora", sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        background: linear-gradient(120deg, var(--violet-deep), var(--sky));
+        color: #fff;
+        border: none;
+        padding: 13px 28px;
+        border-radius: 14px;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(108, 92, 231, 0.3);
+        transition: transform 0.12s ease, box-shadow 0.12s ease,
+          opacity 0.15s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #recBtn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px rgba(108, 92, 231, 0.4);
+      }
+      #recBtn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .status-line {
+        font-size: 0.85rem;
+        color: var(--ink-dim);
+      }
+      .status-line.error {
+        color: var(--coral);
+        font-weight: 600;
+      }
+
+      /* ---------- Loading progress ---------- */
+      .progress {
+        display: none;
+        margin-top: 24px;
+      }
+      .progress.visible {
+        display: block;
+      }
+      .progress-steps {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .step {
+        flex: 1;
+        height: 6px;
+        border-radius: 99px;
+        background: var(--line);
+        overflow: hidden;
+        position: relative;
+      }
+      .step .fill {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, var(--sky), var(--violet));
+        transform: translateX(-100%);
+        transition: transform 0.5s ease;
+      }
+      .step.active .fill {
+        transform: translateX(0);
+        animation: shimmer 1.4s ease-in-out infinite;
+      }
+      .step.done .fill {
+        transform: translateX(0);
+        animation: none;
+      }
+      @keyframes shimmer {
+        0%,
+        100% {
+          opacity: 0.7;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+      .progress-label {
+        font-size: 0.82rem;
+        color: var(--ink-dim);
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      /* ---------- Results ---------- */
+      .results {
+        display: none;
+      }
+      .results.visible {
+        display: block;
+        animation: fadeUp 0.5s ease;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .channel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .channel-head h2 {
+        font-family: "Sora", sans-serif;
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin: 0;
+      }
+      .channel-head .badge {
+        font-size: 1.2rem;
+      }
+
+      .summary-text {
+        font-size: 1rem;
+        line-height: 1.75;
+        color: var(--ink);
+      }
+
+      ul.decisions,
+      ul.actions {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      ul.decisions li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+      ul.decisions li:last-child {
+        border-bottom: none;
+      }
+      ul.decisions li .check {
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+        background: var(--mint-soft);
+        color: var(--mint);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-top: 1px;
+      }
+
+      ul.actions li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      ul.actions li:last-child {
+        border-bottom: none;
+      }
+      .task {
+        flex: 1;
+        font-size: 0.95rem;
+      }
+      .meta {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .pill {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 4px 11px;
+        border-radius: 99px;
+        white-space: nowrap;
+      }
+      .pill.owner {
+        background: var(--violet-soft);
+        color: var(--violet-deep);
+      }
+      .pill.due {
+        background: var(--sky-soft);
+        color: var(--sky);
+      }
+
+      .transcript-body {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.82rem;
+        line-height: 1.9;
+        color: var(--ink-dim);
+        max-height: 280px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        background: var(--bg);
+        border-radius: 14px;
+        padding: 16px 18px;
+      }
+      .empty-note {
+        color: var(--ink-dim);
+        font-size: 0.88rem;
+        font-style: italic;
+      }
+
+      /* ---------- Footer ---------- */
+      footer {
+        margin-top: 48px;
+        text-align: center;
+        padding-top: 32px;
+        border-top: 1px solid var(--line);
+      }
+      footer .footer-heart {
+        font-size: 0.85rem;
+        color: var(--ink-dim);
+        margin-bottom: 6px;
+      }
+      footer .footer-heart .grad {
+        background: linear-gradient(100deg, var(--violet-deep), var(--sky));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        font-weight: 700;
+      }
+      footer .footer-links {
+        display: flex;
+        justify-content: center;
+        gap: 18px;
+        font-size: 0.78rem;
+        margin-top: 10px;
+      }
+      footer .footer-links a {
+        color: var(--ink-dim);
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.15s ease, color 0.15s ease;
+      }
+      footer .footer-links a:hover {
+        color: var(--violet-deep);
+        border-color: var(--violet-deep);
+      }
+
+      @media (max-width: 600px) {
+        h1 {
+          font-size: 2rem;
+        }
+        .card {
+          padding: 22px;
+          border-radius: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+
+    <div class="wrap">
+      <div class="hero">
+        <div class="eyebrow">
+          <span class="pulse"></span> TRANSCRIBE · SUMMARIZE · ACT
+        </div>
+        <h1>Turn meeting recordings<br />into clear next steps</h1>
+        <p class="subhead">
+          Drop in the audio. Get back a transcript, a plain-language summary,
+          the decisions that were made, and a tidy action-item list — done for
+          you in under a minute.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-label">
+          <span class="swatch" style="background: var(--sky)"></span>1 · Upload
+          your recording
+        </div>
+
+        <div id="dropzone">
+          <div class="icon">🎙️</div>
+          <p id="dzText">Drop an audio file here, or click to browse</p>
+          <p style="font-size: 0.78rem">
+            MP3, WAV, M4A, MP4, WEBM, OGG, FLAC — up to 200MB
+          </p>
+          <input
+            type="file"
+            id="fileInput"
+            accept=".mp3,.wav,.m4a,.mp4,.webm,.ogg,.flac"
+          />
+        </div>
+
+        <div class="action-row">
+          <button id="recBtn" disabled>✨ Summarize this meeting</button>
+          <span class="status-line" id="statusLine"></span>
+        </div>
+
+        <div class="progress" id="progress">
+          <div class="progress-steps">
+            <div class="step" id="step1"><div class="fill"></div></div>
+            <div class="step" id="step2"><div class="fill"></div></div>
+            <div class="step" id="step3"><div class="fill"></div></div>
+          </div>
+          <div class="progress-label" id="progressLabel">uploading…</div>
+        </div>
+      </div>
+
+      <div class="results" id="results">
+        <div class="card">
+          <div class="channel-head">
+            <h2>Summary</h2>
+            <span class="badge">📝</span>
+          </div>
+          <div class="summary-text" id="summaryOut"></div>
+        </div>
+
+        <div class="card">
+          <div class="channel-head">
+            <h2>Key decisions</h2>
+            <span class="badge">✅</span>
+          </div>
+          <ul class="decisions" id="decisionsOut"></ul>
+        </div>
+
+        <div class="card">
+          <div class="channel-head">
+            <h2>Action items</h2>
+            <span class="badge">🚀</span>
+          </div>
+          <ul class="actions" id="actionsOut"></ul>
+        </div>
+
+        <div class="card">
+          <div class="channel-head">
+            <h2>Full transcript</h2>
+            <span class="badge">🎧</span>
+          </div>
+          <div class="transcript-body" id="transcriptOut"></div>
+        </div>
+      </div>
+
+      <footer></footer>
+    </div>
+
+    <script>
+      const API_BASE = "/api/meetings";
+
+      const dropzone = document.getElementById("dropzone");
+      const fileInput = document.getElementById("fileInput");
+      const dzText = document.getElementById("dzText");
+      const recBtn = document.getElementById("recBtn");
+      const statusLine = document.getElementById("statusLine");
+      const results = document.getElementById("results");
+      const progress = document.getElementById("progress");
+      const progressLabel = document.getElementById("progressLabel");
+      const steps = [
+        document.getElementById("step1"),
+        document.getElementById("step2"),
+        document.getElementById("step3"),
+      ];
+
+      let selectedFile = null;
+
+      dropzone.addEventListener("click", () => fileInput.click());
+      dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropzone.classList.add("drag");
+      });
+      dropzone.addEventListener("dragleave", () =>
+        dropzone.classList.remove("drag")
+      );
+      dropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("drag");
+        if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+      });
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length) setFile(e.target.files[0]);
+      });
+
+      function setFile(file) {
+        selectedFile = file;
+        dzText.innerHTML = `<span class="filename">🎵 ${file.name}</span>`;
+        recBtn.disabled = false;
+        statusLine.textContent = "";
+        statusLine.className = "status-line";
+      }
+
+      function setStep(i, state) {
+        // state: 'active' | 'done' | reset
+        steps.forEach((s, idx) => {
+          s.classList.remove("active", "done");
+          if (idx < i) s.classList.add("done");
+          if (idx === i && state === "active") s.classList.add("active");
+          if (idx === i && state === "done") s.classList.add("done");
+        });
+      }
+
+      recBtn.addEventListener("click", async () => {
+        if (!selectedFile) return;
+        recBtn.disabled = true;
+        results.classList.remove("visible");
+        progress.classList.add("visible");
+        statusLine.textContent = "";
+        statusLine.className = "status-line";
+
+        setStep(0, "active");
+        progressLabel.textContent = "uploading audio…";
+
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        // simulate step progression for perceived responsiveness while the
+        // single blocking request is in flight on the server
+        const t1 = setTimeout(() => {
+          setStep(1, "active");
+          progressLabel.textContent = "transcribing with whisper…";
+        }, 900);
+        const t2 = setTimeout(() => {
+          setStep(2, "active");
+          progressLabel.textContent = "summarizing with claude…";
+        }, 3500);
+
+        try {
+          const res = await fetch(API_BASE, { method: "POST", body: formData });
+          const data = await res.json();
+
+          clearTimeout(t1);
+          clearTimeout(t2);
+
+          if (!res.ok) throw new Error(data.detail || "Request failed");
+          if (data.status === "failed")
+            throw new Error(data.error || "Processing failed");
+
+          setStep(3, "done");
+          renderResults(data);
+          statusLine.textContent = `✅ done — ${Math.round(
+            data.duration_seconds || 0
+          )}s of audio processed`;
+        } catch (err) {
+          clearTimeout(t1);
+          clearTimeout(t2);
+          statusLine.textContent = `error: ${err.message}`;
+          statusLine.className = "status-line error";
+        } finally {
+          recBtn.disabled = false;
+          setTimeout(() => progress.classList.remove("visible"), 600);
+        }
+      });
+
+      function renderResults(data) {
+        document.getElementById("summaryOut").textContent =
+          data.summary || "No summary generated.";
+
+        const decisionsOut = document.getElementById("decisionsOut");
+        decisionsOut.innerHTML = "";
+        if (data.decisions && data.decisions.length) {
+          data.decisions.forEach((d) => {
+            const li = document.createElement("li");
+            li.innerHTML = `<span class="check">✓</span><span>${d}</span>`;
+            decisionsOut.appendChild(li);
+          });
+        } else {
+          decisionsOut.innerHTML =
+            '<li class="empty-note" style="border:none;padding-left:0;">No explicit decisions detected.</li>';
+        }
+
+        const actionsOut = document.getElementById("actionsOut");
+        actionsOut.innerHTML = "";
+        if (data.action_items && data.action_items.length) {
+          data.action_items.forEach((a) => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+        <span class="task">${a.task}</span>
+        <span class="meta">
+          <span class="pill owner">${a.owner || "Unassigned"}</span>
+          ${a.due ? `<span class="pill due">${a.due}</span>` : ""}
+        </span>`;
+            actionsOut.appendChild(li);
+          });
+        } else {
+          actionsOut.innerHTML =
+            '<li class="empty-note" style="border:none;padding:0;">No action items detected.</li>';
+        }
+
+        document.getElementById("transcriptOut").textContent =
+          data.transcript || "(empty transcript)";
+
+        results.classList.add("visible");
+      }
+    </script>
+  </body>
+</html>
