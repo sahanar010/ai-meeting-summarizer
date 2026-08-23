@@ -7,12 +7,12 @@ owner and due date when the conversation makes that clear.
 ## How it works
 
 ```
-audio file → Whisper (local ASR) → transcript → Claude → summary + decisions + action items
+audio file → Whisper (local ASR) → transcript → Google Gemini → summary + decisions + action items
 ```
 
 1. **Transcription** — [OpenAI Whisper](https://github.com/openai/whisper) runs
    locally (no audio ever leaves your machine for this step).
-2. **Summarization** — the transcript is sent to Claude with a prompt that asks
+2. **Summarization** — the transcript is sent to with a prompt that asks
    for a structured JSON response (summary / decisions / action items).
 3. **Storage** — results are saved to a local SQLite database (`meetings.db`)
    so past meetings can be revisited.
@@ -24,7 +24,7 @@ meeting-summarizer/
 ├── backend/
 │   ├── main.py          # FastAPI app & routes
 │   ├── asr.py            # Whisper transcription
-│   ├── summarizer.py      # Claude prompt + call
+│   ├── summarizer.py      # prompt + call
 │   ├── database.py         # SQLite models
 │   ├── schemas.py          # Pydantic response models
 │   └── requirements.txt
@@ -45,7 +45,7 @@ meeting-summarizer/
   - macOS: `brew install ffmpeg`
   - Ubuntu/Debian: `sudo apt install ffmpeg`
   - Windows: [download a build](https://www.gyan.dev/ffmpeg/builds/) and add it to PATH
-- An [Anthropic API key](https://console.anthropic.com/)
+- An [GEMINI_API_KEY]
 
 ### 2. Install dependencies
 
@@ -63,7 +63,7 @@ The first run of `openai-whisper` will download the selected model
 
 ```bash
 cp .env.example .env
-# then edit .env and paste in your ANTHROPIC_API_KEY
+
 ```
 
 ### 4. Run the server
@@ -77,12 +77,12 @@ Open **http://localhost:8000** — the frontend is served directly from the back
 
 ## API reference
 
-| Method | Endpoint                | Description                                  |
-|--------|--------------------------|-----------------------------------------------|
-| POST   | `/api/meetings`          | Upload an audio file; returns full result     |
-| GET    | `/api/meetings`          | List all past meetings (most recent first)     |
-| GET    | `/api/meetings/{id}`     | Fetch a single meeting                          |
-| DELETE | `/api/meetings/{id}`     | Delete a meeting                                 |
+| Method | Endpoint             | Description                                |
+| ------ | -------------------- | ------------------------------------------ |
+| POST   | `/api/meetings`      | Upload an audio file; returns full result  |
+| GET    | `/api/meetings`      | List all past meetings (most recent first) |
+| GET    | `/api/meetings/{id}` | Fetch a single meeting                     |
+| DELETE | `/api/meetings/{id}` | Delete a meeting                           |
 
 Example with `curl`:
 
@@ -102,13 +102,21 @@ Response shape:
   "summary": "The team agreed to ship the v2 API by Friday...",
   "decisions": ["Ship v2 API by Friday", "Use Postgres instead of Mongo"],
   "action_items": [
-    {"task": "Write migration script", "owner": "Priya", "due": "Thursday"},
-    {"task": "Update API docs", "owner": "Unassigned", "due": null}
+    { "task": "Write migration script", "owner": "Priya", "due": "Thursday" },
+    { "task": "Update API docs", "owner": "Unassigned", "due": null }
   ],
   "duration_seconds": "612.4",
   "created_at": "2026-08-23T10:15:00"
 }
 ```
+
+## Features
+
+- Speech-to-text using OpenAI Whisper
+- AI-generated meeting summaries using Google Gemini
+- Extracts key decisions
+- Identifies action items
+- Stores meeting history in SQLite
 
 ## Design notes / trade-offs
 
@@ -123,12 +131,8 @@ Response shape:
 
 ## Evaluation checklist (per assignment brief)
 
-- [x] ASR API integration — local Whisper
-- [x] Backend to store & process data — FastAPI + SQLite
-- [x] LLM for summary generation — Claude, structured JSON output
-- [x] Optional frontend — upload + view summary
-- [ ] Demo video — record a 2–3 min walkthrough before submitting
-
-## License
-
-MIT
+ASR API integration — local Whisper
+Backend to store & process data — FastAPI + SQLite
+LLM for summary generation — Claude, structured JSON output
+Optional frontend — upload + view summary
+Demo video — record a 2–3 min walkthrough before submitting
